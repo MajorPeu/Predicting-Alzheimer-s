@@ -1,6 +1,6 @@
 ---
 title: "Predicting Alzheimer’s Disease"
-author: "Peush Gomes (1007047802)"
+author: "Peush Gomes"
 date: "2024-11-08"
 output: pdf_document
 ---
