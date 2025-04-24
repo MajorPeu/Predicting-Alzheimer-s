@@ -1,0 +1,83 @@
+```{r data}
+trainingdata <- read.csv(file="train.csv", header = T)
+testdata <- read.csv(file="test.csv", header = T)
+```
+
+```{r}
+cleanedtrain <- subset(trainingdata, select = -c(PatientID, DoctorInCharge))
+```
+
+```{r}
+modfull <- glm(Diagnosis ~ .,family = binomial(link = logit), data = cleanedtrain)
+summary(modfull)
+
+```
+
+```{r}
+#stepwise
+modskinny <- step(modfull, direction = "both")
+```
+
+```{r}
+
+#modskinnied 
+summary(modskinny)
+```
+
+```{r}
+mod_interaction <- glm(Diagnosis ~ MMSE * FunctionalAssessment + MemoryComplaints + 
+                        BehavioralProblems + ADL, 
+                        family = binomial(link = "logit"), 
+                        data = cleanedtrain)
+summary(mod_interaction)
+```
+
+```{r}
+#predict on test
+subpredict <- predict(modskinny, newdata = testdata, type = "response")
+subpredict_class <- ifelse(subpredict > 0.5, 1, 0)
+
+testdup <- testdata
+testdup$Diagnosis <- subpredict_class
+
+finaltest <- subset(testdup, select = c(PatientID, Diagnosis))
+```
+
+```{r}
+#interaction predict
+int_predict <- predict(mod_interaction, newdata = testdata, type = "response")
+int_predict_clas <- ifelse(int_predict > 0.5, 1, 0)
+
+int_testdup <- testdata
+int_testdup$Diagnosis <- int_predict_clas
+
+finaltest_int <- subset(int_testdup, select = c(PatientID, Diagnosis))
+```
+
+```{r}
+#Export_to_csv
+
+write.csv(finaltest,"newpredictions.csv", row.names = FALSE)
+write.csv(finaltest_int,"newinteractionpredictions.csv", row.names = FALSE)
+
+```
+
+```{r}
+#Treemaking
+
+#tempfactormaking
+FactorDiag <- factor(ifelse(cleanedtrain$Diagnosis == 0, "No", "Yes"))
+
+factortrain <- data.frame(cleanedtrain, FactorDiag)
+
+factortrain <- subset(factortrain, select = -c(Diagnosis))
+
+tree.mod <- tree(FactorDiag ~ ., factortrain)
+
+
+tree.mod_nonfact <- tree(Diagnosis ~ ., cleanedtrain)
+
+summary(tree.mod)
+summary(tree.mod_nonfact)
+
+```
